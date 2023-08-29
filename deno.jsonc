@@ -1,0 +1,35 @@
+{
+	"tasks": {
+		"compile": "deno run -A ./esm/scripts/compile.ts",
+		"test": "deno test ./esm/tests/stemmer.test.ts",
+	},
+	"imports": {
+		"std/": "https://deno.land/std@0.200.0/",
+		// "snowball/": "https://cdn.jsdelivr.net/gh/clearlylocal/snowball@2.2.0-esm.4/",
+		"snowball/": "./",
+	},
+	"fmt": {
+		"semiColons": false,
+		"useTabs": true,
+		"lineWidth": 120,
+		"indentWidth": 4,
+		"singleQuote": true,
+		"proseWrap": "preserve",
+		"exclude": [
+			"node_modules",
+			"_fresh",
+			"fresh.gen.ts",
+			"*.md",
+			"vendor",
+			"UnicodeData.json",
+			"UnicodeData.txt",
+			"_gen.ts",
+			"_fixtures",
+			"static/qa",
+			"**/*.min.*",
+		],
+	},
+	"compilerOptions": {
+		"strict": true,
+	},
+}
