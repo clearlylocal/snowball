@@ -8,9 +8,20 @@ function assertSameStem(stemmer: { stemWord(word: string): string }, word1: stri
 }
 
 Deno.test('TS type checking', () => {
-	const _tsCheck = () => {
-		const stemmer = new EnglishStemmer()
-		const _word: string = stemmer.stemWord('')
+	const _tsCheck = async () => {
+		for (const stemmer of [new EnglishStemmer(), (await getStemmerByLocale('en'))!]) {
+			type Params = Parameters<typeof stemmer.stemWord>
+			type Return = ReturnType<typeof stemmer.stemWord>
+			type NullishNumber = null | undefined | number
+			// type checking will fail if `Params` length > 1 or is a type that doesn't include `[string]`
+			const _paramIncludesString: [string] = [''] as Params
+			// type checking will fail if `Params[0]` is `any` or is nullable
+			const _paramExcludesNonString: Exclude<[NullishNumber | string], Params> = [1] as [NullishNumber]
+			// type checking will fail if `Return` is a type that doesn't include `string`
+			const _returnIncludesString: string = '' as Return
+			// type checking will fail if `Return` is `any` or is nullable
+			const _returnExcludesNonString: Exclude<NullishNumber | string, Return> = 1 as NullishNumber
+		}
 	}
 })
 

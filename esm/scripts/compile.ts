@@ -28,6 +28,10 @@ const StemmerTypeDef = `/** @typedef {{ stemWord(word: string): string }} Stemme
 
 const filePaths: Record<string, { path: string; isWip?: boolean }> = {}
 
+function capitalize(str: string) {
+	return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 for await (const x of Deno.readDir('./algorithms')) {
 	if (x.isFile && x.name.endsWith(sblExt)) {
 		const languageName = x.name.slice(0, -sblExt.length)
@@ -50,23 +54,27 @@ for await (const x of Deno.readDir('./algorithms')) {
 
 		const content = await Deno.readTextFile(tempFilePath)
 
-		const ctorName = tempFilePath.split('/').at(-1)!.slice(0, -jsExt.length)
+		const mangledClassName = capitalize(tempFilePath.split('/').at(-1)!.slice(0, -jsExt.length))
 
 		if (!content.trim()) throw new Error(`No content for ${languageName}`)
 
+		const outClassName = `${capitalize(languageName)}Stemmer`
+
 		await writeTextFile(
 			outFilePath,
-			`// deno-lint-ignore-file
-import BaseStemmer from '../core/base-stemmer.mjs'
-${
+			`${
 				content.replace(
-					`${ctorName} = function`,
-					`${StemmerTypeDef}
+					new RegExp(String.raw`^(//.+)[\s\S]+?${mangledClassName} = function`),
+					`$1
+// deno-lint-ignore-file
+import BaseStemmer from '../core/base-stemmer.mjs'
+
+${StemmerTypeDef}
 
 /** @type {{ new(): Stemmer }} */
-export default (function ${languageName.charAt(0).toUpperCase() + languageName.slice(1)}Stemmer`,
+const ${outClassName} = function`,
 				)
-					.replace(/(;)?(\s*)$/, ')$1$2')
+					.replace(/$/, `\nexport default ${outClassName}\n`)
 			}`,
 		)
 
@@ -76,7 +84,7 @@ export default (function ${languageName.charAt(0).toUpperCase() + languageName.s
 
 const stemmersByLanguage = `{
 ${
-	Object.entries(filePaths).map(([code, { path, isWip }]) => {
+	Object.entries(filePaths).sort(([a], [b]) => a.localeCompare(b)).map(([code, { path, isWip }]) => {
 		const defaultImport = `(await (import(${JSON.stringify(join('..', relative('./esm', path)))}))).default`
 
 		return isWip
