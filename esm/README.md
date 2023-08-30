@@ -25,13 +25,15 @@ const stemmer = new EnglishStemmer()
 stemmer.stemWord('location') // locat
 ```
 
-Import a singleton stemmer for a language using its ISO code:
+Import a stemmer for a language using its ISO code:
 
 ```js
 import { getStemmerByLocale } from 'snowball/esm/core/getStemmerByLocale.mjs'
 
 const locale = 'es' // Spanish
-const stemmer = await getStemmerByLocale(locale)
+
+const Stemmer = await getStemmerByLocale(locale)
+const stemmer = new Stemmer()
 
 stemmer.stemWord('ubicación') // ubic
 ```

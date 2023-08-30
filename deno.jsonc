@@ -5,7 +5,7 @@
 	},
 	"imports": {
 		"std/": "https://deno.land/std@0.200.0/",
-		// "snowball/": "https://cdn.jsdelivr.net/gh/clearlylocal/snowball@2.2.0-esm.5/",
+		// "snowball/": "https://cdn.jsdelivr.net/gh/clearlylocal/snowball@2.2.0-esm.7/",
 		"snowball/": "./",
 	},
 	"fmt": {

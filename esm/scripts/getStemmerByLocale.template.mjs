@@ -2,41 +2,15 @@
 /** @typedef {{ new(): Stemmer }} StemmerConstructor */
 
 const _stemmers = /** @type {const} */ ([
-	['ar', () => import('../languages/arabic.mjs')],
-	['ca', () => import('../languages/catalan.mjs')],
-	['da', () => import('../languages/danish.mjs')],
-	['de', () => import('../languages/german.mjs')],
-	['el', () => import('../languages/greek.mjs')],
+	// <stemmers>
 	['en', () => import('../languages/english.mjs')],
-	['es', () => import('../languages/spanish.mjs')],
-	['eu', () => import('../languages/basque.mjs')],
-	['fi', () => import('../languages/finnish.mjs')],
-	['fr', () => import('../languages/french.mjs')],
-	['ga', () => import('../languages/irish.mjs')],
-	['hi', () => import('../languages/hindi.mjs')],
-	['hu', () => import('../languages/hungarian.mjs')],
-	['hy', () => import('../languages/armenian.mjs')],
-	['id', () => import('../languages/indonesian.mjs')],
-	['it', () => import('../languages/italian.mjs')],
-	['lt', () => import('../languages/lithuanian.mjs')],
-	['ne', () => import('../languages/nepali.mjs')],
-	['nl', () => import('../languages/dutch.mjs')],
-	['no', () => import('../languages/norwegian.mjs')],
-	['pt', () => import('../languages/portuguese.mjs')],
-	['ro', () => import('../languages/romanian.mjs')],
-	['ru', () => import('../languages/russian.mjs')],
-	['sr', () => import('../languages/serbian.mjs')],
-	['sv', () => import('../languages/swedish.mjs')],
-	['ta', () => import('../languages/tamil.mjs')],
-	['tr', () => import('../languages/turkish.mjs')],
-	['yi', () => import('../languages/yiddish.mjs')],
+	// </stemmers>
 ])
 
 const _wipStemmers = /** @type {const} */ ([
-	['cs', () => import('../languages/czech.mjs')],
-	['pl', () => import('../languages/polish.mjs')],
-	['sk', () => import('../languages/slovak.mjs')],
-	['uk', () => import('../languages/ukrainian.mjs')],
+	// <wip_stemmers>
+	['xx', () => import('../languages/english.mjs')],
+	// </wip_stemmers>
 ])
 
 /** @typedef {typeof _stemmers[number][0]} StemmerLocale */
@@ -93,3 +67,5 @@ export async function getStemmerByLocale(locale, options) {
 	const mod = stemmers.get(language) ?? (allowWip ? wipStemmers.get(language) : null)
 	return mod ? (await mod()).default : null
 }
+
+getStemmerByLocale('es')
