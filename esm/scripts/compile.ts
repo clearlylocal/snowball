@@ -82,62 +82,29 @@ const ${outClassName} = function`,
 	}
 }
 
-const stemmersByLanguage = `{
-${
-	Object.entries(filePaths).sort(([a], [b]) => a.localeCompare(b)).map(([code, { path, isWip }]) => {
-		const defaultImport = `(await (import(${JSON.stringify(join('..', relative('./esm', path)))}))).default`
+const allImports = Object.entries(filePaths).sort(([a], [b]) => a.localeCompare(b))
 
-		return isWip
-			? `\t${JSON.stringify(code)}: async (a) => a ? ${defaultImport} : null,`
-			: `\t${JSON.stringify(code)}: async () => ${defaultImport},`
-	}).join('\n')
-}
-}`
-
-const getStemmerByLocale = String
-	.raw`${StemmerTypeDef}
-
-/** @type {Partial<Record<string, (allowWip: boolean) => Promise<{ new(): Stemmer } | null>>>} */
-const stemmersByLanguage = ${stemmersByLanguage}
-
-/** @type {Map<string, Stemmer | null>} */
-const cache = new Map()
-
-/**
- * @typedef {Object} Options
- *
- * @property {boolean} allowWip - Whether to allow work-in-progress stemmers or not.
- * If not, ${'`null`'} is returned for any work-in-progress stemmers.
- * @default false
- */
-
-/** @type {Options} */
-const defaultOptions = {
-	allowWip: false,
+const toStemmerImportMap = (imports: typeof allImports) => {
+	return imports.map((x) =>
+		`[${JSON.stringify(x[0])}, () => import(${JSON.stringify(join('..', relative('./esm', x[1].path)))})],`
+	).join('\n')
 }
 
-/**
- * @param {string | Intl.Locale} locale
- * @param {Partial<Options>} [options]
- *
- * @throws {TypeError} if an invalid locale is passed
- *
- * @returns {Promise<Stemmer | null>} Singleton instance of ${'`Stemmer`'} if exists for that locale, else ${'`null`'}
- */
-export async function getStemmerByLocale(locale, options) {
-	const { allowWip } = { ...defaultOptions, ...options }
-	const { language } = new Intl.Locale(locale)
-	const cacheKey = ${'`${language}::${allowWip}`'}
+const stemmers = toStemmerImportMap(allImports.filter((x) => !x[1].isWip))
+const wip_stemmers = toStemmerImportMap(allImports.filter((x) => x[1].isWip))
 
-	if (!cache.has(cacheKey)) {
-		const Ctor = await stemmersByLanguage[language]?.(allowWip)
-
-		cache.set(cacheKey, Ctor ? new Ctor() : null)
-	}
-
-	return cache.get(cacheKey) ?? null
+const templateReplacements = {
+	stemmers,
+	wip_stemmers,
 }
-`
+
+const getStemmerByLocale = (await Deno.readTextFile('./esm/scripts/getStemmerByLocale.template.mjs'))
+	.replaceAll(
+		new RegExp(String.raw`//\s*<(${Object.keys(templateReplacements).join('|')})>[\s\S]+?//\s*</\1>`, 'g'),
+		(_, p1) => templateReplacements[p1 as keyof typeof templateReplacements],
+	)
+
+// 		const defaultImport = `(await (import(${JSON.stringify(join('..', relative('./esm', path)))}))).default`
 
 await writeTextFile('./esm/core/getStemmerByLocale.mjs', getStemmerByLocale)
 

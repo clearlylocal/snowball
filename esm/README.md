@@ -25,13 +25,30 @@ const stemmer = new EnglishStemmer()
 stemmer.stemWord('location') // locat
 ```
 
-Import a singleton stemmer for a language using its ISO code:
+Import a stemmer for a language using its ISO code:
 
 ```js
 import { getStemmerByLocale } from 'snowball/esm/core/getStemmerByLocale.mjs'
 
 const locale = 'es' // Spanish
-const stemmer = await getStemmerByLocale(locale)
+
+const Stemmer = await getStemmerByLocale(locale)
+const stemmer = new Stemmer()
 
 stemmer.stemWord('ubicación') // ubic
+```
+
+TypeScript will detect the type of an imported stemmer as being `StemmerConstructor | null` if locale is a dynamic string, or `StemmerConstructor` if it's a constant string literal that corresponds to an existing stemmer. You can thus implement a fallback with a known locale like this:
+
+```ts
+import { getStemmerByLocale } from 'snowball/esm/core/getStemmerByLocale.mjs'
+
+const dynamicLocales = ['xx', 'yy'] // not sure if these exist
+const fallbackLocale = 'en'
+
+let Stemmer: Awaited<ReturnType<typeof getStemmerByLocale>> = null
+for (const locale of dynamicLocales) Stemmer ??= await getStemmerByLocale(locale)
+Stemmer ??= await getStemmerByLocale(fallbackLocale) // `en` stemmer exists - type of `Stemmer` now omits `null`
+
+const stemmer = new Stemmer()
 ```
