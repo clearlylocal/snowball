@@ -9,10 +9,14 @@
 # List all the main algorithms for each language, in UTF-8, and also with
 # the most commonly used encoding.
 
+# [WIP] indicates work-in-progress stemmers, i.e. stemmers that haven't
+# yet been merged into the official repo.
+
 arabic          UTF_8                   arabic,ar,ara
 armenian        UTF_8                   armenian,hy,hye,arm
 basque          UTF_8,ISO_8859_1        basque,eu,eus,baq
 catalan         UTF_8,ISO_8859_1        catalan,ca,cat
+czech           UTF_8                   czech,cs                [WIP]
 danish          UTF_8,ISO_8859_1        danish,da,dan
 dutch           UTF_8,ISO_8859_1        dutch,nl,dut,nld
 english         UTF_8,ISO_8859_1        english,en,eng
@@ -28,14 +32,17 @@ italian         UTF_8,ISO_8859_1        italian,it,ita
 lithuanian      UTF_8                   lithuanian,lt,lit
 nepali          UTF_8                   nepali,ne,nep
 norwegian       UTF_8,ISO_8859_1        norwegian,no,nor
+polish          UTF_8                   polish,pl               [WIP]
 portuguese      UTF_8,ISO_8859_1        portuguese,pt,por
 romanian        UTF_8                   romanian,ro,rum,ron
 russian         UTF_8,KOI8_R            russian,ru,rus
 serbian         UTF_8                   serbian,sr,srp
+slovak          UTF_8                   slovak,sk               [WIP]
 spanish         UTF_8,ISO_8859_1        spanish,es,esl,spa
 swedish         UTF_8,ISO_8859_1        swedish,sv,swe
 tamil           UTF_8                   tamil,ta,tam
 turkish         UTF_8                   turkish,tr,tur
+ukrainian       UTF_8                   ukrainian,uk            [WIP]
 yiddish         UTF_8                   yiddish,yi,yid
 
 # Also include the traditional porter algorithm for english.

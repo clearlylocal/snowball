@@ -1,13 +1,43 @@
 import { join, relative } from 'std/path/mod.ts'
-import { languageCodes } from './languageCodes.ts'
+import { assertEquals } from 'std/assert/mod.ts'
+import { green, yellow } from 'std/fmt/colors.ts'
+
+const lines = (await Deno.readTextFile('./libstemmer/modules.txt')).split('\n').map((x) => x.trim()).filter((x) =>
+	x && !x.startsWith('#')
+).map((x) => x.split(/\s+/))
+
+function chooseCanonicalLocale(locales: string[]) {
+	for (const locale of locales) {
+		try {
+			if (
+				locale === new Intl.Locale(locale).toString() &&
+				locale !== new Intl.DisplayNames('en', { type: 'language' }).of(new Intl.Locale(locale).toString())
+			) {
+				return locale
+			}
+		} catch { /* ignore errors */ }
+	}
+
+	return null
+}
+
+const languageCodes = Object.fromEntries(lines
+	.map(([langName, _, locales, isWip]) => {
+		const isoCode = chooseCanonicalLocale(locales.split(','))
+
+		return [langName, { isoCode, isWip: isWip === '[WIP]' }]
+	}))
 
 const sblExt = '.sbl'
 const jsExt = '.js'
 
+const written: string[] = []
+const skipped: string[] = []
+
 async function writeTextFile(path: string | URL, content: string) {
 	await Deno.writeTextFile(path, content)
 
-	console.log(`Wrote ${path}`)
+	written.push(String(path))
 }
 
 try {
@@ -35,46 +65,57 @@ function capitalize(str: string) {
 for await (const x of Deno.readDir('./algorithms')) {
 	if (x.isFile && x.name.endsWith(sblExt)) {
 		const languageName = x.name.slice(0, -sblExt.length)
+		const className = `${capitalize(languageName)}Stemmer`
 
 		const languageMeta: { isoCode: string | null; isWip?: boolean } | undefined =
 			languageCodes[languageName as keyof typeof languageCodes]
+
+		if (!languageMeta?.isoCode) {
+			skipped.push(x.name)
+			continue
+		}
+
 		const outFilePath = `./esm/languages/${languageName}.mjs`
 
-		if (languageMeta == null) {
-			throw new Error(`No entry in languageCodes for language ${languageName}`)
-		} else if (languageMeta?.isoCode != null) {
-			filePaths[languageMeta.isoCode] = { path: outFilePath, isWip: languageMeta.isWip }
-		}
+		assertEquals(
+			languageMeta.isoCode,
+			new Intl.Locale(languageMeta.isoCode).toString(),
+			`ISO code ${languageMeta.isoCode} is not normalized`,
+		)
+
+		filePaths[languageMeta.isoCode] = { path: outFilePath, isWip: languageMeta.isWip }
 
 		const tempFilePath = await Deno.makeTempFile({ prefix: 'Ctor', suffix: jsExt })
 
 		await new Deno.Command('./snowball', {
-			args: `./algorithms/${x.name} -js -o ${tempFilePath.slice(0, -jsExt.length)}`.split(' '),
+			args: [
+				`./algorithms/${x.name}`,
+				'-js',
+				'-utf8',
+				...['-o', `${tempFilePath.slice(0, -jsExt.length)}`],
+				...['-n', className],
+			],
 		}).output()
 
 		const content = await Deno.readTextFile(tempFilePath)
 
-		const mangledClassName = capitalize(tempFilePath.split('/').at(-1)!.slice(0, -jsExt.length))
-
 		if (!content.trim()) throw new Error(`No content for ${languageName}`)
-
-		const outClassName = `${capitalize(languageName)}Stemmer`
 
 		await writeTextFile(
 			outFilePath,
 			`${
 				content.replace(
-					new RegExp(String.raw`^(//.+)[\s\S]+?${mangledClassName} = function`),
+					new RegExp(String.raw`^(//.+)[\s\S]+?${className} = function`),
 					`$1
-// deno-lint-ignore-file
-import BaseStemmer from '../core/base-stemmer.mjs'
+				// deno-lint-ignore-file
+				import BaseStemmer from '../core/base-stemmer.mjs';
 
-${StemmerTypeDef}
+				${StemmerTypeDef}
 
-/** @type {{ new(): Stemmer }} */
-const ${outClassName} = function`,
+				/** @type {{ new(): Stemmer }} */
+				const ${className} = function`,
 				)
-					.replace(/$/, `\nexport default ${outClassName}\n`)
+					.replace(/$/, `\nexport default ${className};\n`)
 			}`,
 		)
 
@@ -104,10 +145,15 @@ const getStemmerByLocale = (await Deno.readTextFile('./esm/scripts/getStemmerByL
 		(_, p1) => templateReplacements[p1 as keyof typeof templateReplacements],
 	)
 
-// 		const defaultImport = `(await (import(${JSON.stringify(join('..', relative('./esm', path)))}))).default`
-
 await writeTextFile('./esm/core/getStemmerByLocale.mjs', getStemmerByLocale)
 
 await new Deno.Command('deno', {
 	args: ['fmt', './esm'],
 }).output()
+
+function langNameFromPath(path: string) {
+	return path.split('/').at(-1)!.split('.').at(0)!
+}
+
+console.info(`✅ Wrote ${written.map((path) => green(path)).join(', ')}`)
+console.info(`⚠️  Skipped ${skipped.map((path) => yellow(langNameFromPath(path))).join(', ')}`)
